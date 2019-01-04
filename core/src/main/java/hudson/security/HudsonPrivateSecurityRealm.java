@@ -394,6 +394,8 @@ public class HudsonPrivateSecurityRealm extends AbstractPasswordBasedSecurityRea
 
         if (!(si.password1 != null && si.password1.length() != 0)) {
             si.errorMessage = Messages.HudsonPrivateSecurityRealm_CreateAccount_PasswordRequired();
+        } else if(si.password1.length() < 8 || !containsRequiredCharacters(si.password1)) {
+        	si.errorMessage = Messages.HudsonPrivateSecurityRealm_CreateAccount_PasswordInvalid();
         }
 
         if (si.username == null || si.username.length() == 0) {
@@ -466,6 +468,39 @@ public class HudsonPrivateSecurityRealm extends AbstractPasswordBasedSecurityRea
             return value.matches(DEFAULT_ID_REGEX);
         }else{
             return value.matches(ID_REGEX);
+        }
+    }
+
+    static private boolean containsRequiredCharacters(@Nonnull String value){
+    	int level = 0;
+        for (char c : value.toCharArray()) {
+        	if ((level & 1) == 0) {
+	            if (c >= 'A' && c <= 'Z') {
+	            	level |= 1;
+	            }
+        	}
+        	if ((level & 2) == 0) {
+	            if (c >= 'a' && c <= 'z') {
+	            	level |= 2;
+	            }
+        	}
+        	if ((level & 4) == 0) {
+	            if (c >= '0' && c <= '9') {
+	            	level |= 4;
+	            }
+        	}
+        	if ((level & 8) == 0) {
+	            if ((c >= '!' && c <= '/') || (c >= ':' && c <= '@')
+	            		 || (c >= '[' && c <= '`') || (c >= '{' && c <= '~')) {
+	            	level |= 8;
+	            }
+        	}
+        }
+
+        if ((level & 15) == 15) {
+        	return true;
+        } else {
+        	return false;
         }
     }
 
@@ -668,6 +703,9 @@ public class HudsonPrivateSecurityRealm extends AbstractPasswordBasedSecurityRea
 
                 if(!Util.fixNull(pwd).equals(Util.fixNull(pwd2)))
                     throw new FormException("Please confirm the password by typing it twice","user.password2");
+
+                if(Util.fixNull(pwd).length() < 8 || !containsRequiredCharacters(Util.fixNull(pwd)))
+                	throw new FormException("Password must have at least 8 characters with at least a number, a special character, a capital&lower case letter","user.password");
 
                 String data = Protector.unprotect(pwd);
                 if(data!=null) {
